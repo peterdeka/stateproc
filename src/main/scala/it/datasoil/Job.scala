@@ -21,7 +21,7 @@ package it.datasoil
 import java.io.{File, FileInputStream, ObjectInputStream}
 import java.util
 
-import it.datasoil.anomalydetector.{AnomalyStepConfiguration, Detector}
+import it.datasoil.anomalydetector.{AnomalyStepConfiguration, CrossCorrelDetector, Detector}
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.Types
 import org.apache.flink.api.java.functions.KeySelector
@@ -42,14 +42,14 @@ object Job {
     // set up the execution environment
     import org.apache.flink.configuration.GlobalConfiguration
     import org.apache.flink.core.fs.FileSystem
-    FileSystem.initialize(GlobalConfiguration.loadConfiguration("/home/deka/flinkdev/stateproc/")) //needed for AWS S3 credentials in flink.conf
+    FileSystem.initialize(GlobalConfiguration.loadConfiguration("/home/ale/Lavoro/dev/github/stateproc")) //needed for AWS S3 credentials in flink.conf
     val env = ExecutionEnvironment.getExecutionEnvironment
    //transform
   /*  val savepoint = Savepoint.load(env, "s3://syn-saas/flink-savepoints/savepoint-1abb65-934333e09183", new FsStateBackend("s3://syn-saas/flink-checkpoints"))
     val s = savepoint.readKeyedState("evts-adp-transform",new TransformersReaderFunction,Types.STRING,Types.STRING)*/
     //anomaly
-    val savepoint = Savepoint.load(env, "s3://syn-saas/flink-savepoints/savepoint-6dfea0-ffd0d5021351", new FsStateBackend("s3://syn-saas/flink-checkpoints"))
-    val s = savepoint.readKeyedState("alertmap",new AnomalyStateReaderFunction,Types.STRING,Types.STRING)
+    val savepoint = Savepoint.load(env, "s3://syn-saas/flink-savepoints/DIOKANE", new FsStateBackend("s3://syn-saas/flink-checkpoints"))
+    val s = savepoint.readKeyedState("alertmap",new AnomalyStateReaderFunction2,Types.STRING,Types.STRING)
     s.print()
 
     // execute program
@@ -127,7 +127,7 @@ class AlertMapBootStrapper extends KeyedStateBootstrapFunction[String, (String,S
   }
 }
 
-class AnomalyStateReaderFunction extends KeyedStateReaderFunction[String, String] {
+class AnomalyStateReaderFunction2 extends KeyedStateReaderFunction[String, String] {
   var pipestate: MapState[String,String] = null
 
   var transformersState: MapState[String, TransformStepConfiguration] = null
@@ -148,16 +148,26 @@ class AnomalyStateReaderFunction extends KeyedStateReaderFunction[String, String
   }
 
   override def readKey(k: String, context: KeyedStateReaderFunction.Context, out: Collector[String]): Unit = {
-    /* val i = state.iterator()
-     while (i.hasNext) {
-       val dmap = i.next()
-       val k = dmap.getKey*/
-    println("AAHAHA",k)
-    out.collect(k)
-    //}
-  }
 
+    val mapKeys = mapToDetector.keys().iterator()
+    while (mapKeys.hasNext){
+      val currentKey = mapKeys.next()
+      out.collect(s">>>>>>>>>>>> Key $currentKey")
+      val innerMap = mapToDetector.get(currentKey)
+      for (innerK <- innerMap.keys){
+        val currentDetector = innerMap.get(innerK).get
+        if (currentDetector.getClass == classOf[CrossCorrelDetector]){
+          out.collect(s">>>>>>>>>>>> -----> Key=$innerK, TreeSize=${currentDetector.asInstanceOf[CrossCorrelDetector].tree.size()}, " +
+            s"quantile(0.01)=${currentDetector.asInstanceOf[CrossCorrelDetector].tree.quantile(0.01)}, quantile(0.5)=${currentDetector.asInstanceOf[CrossCorrelDetector].tree.quantile(0.5)}, " +
+            s"quantile(0.99)=${currentDetector.asInstanceOf[CrossCorrelDetector].tree.quantile(0.99)}")
+        }
+      }
+    }
+  }
 }
+
+
+
 
 
 class TransformersReaderFunction extends KeyedStateReaderFunction[String, String] {
@@ -180,8 +190,7 @@ class TransformersReaderFunction extends KeyedStateReaderFunction[String, String
     while (i.hasNext) {
       val dmap = i.next()
       val k = dmap.getKey*/
-    println("AAHAHA",k)
-      out.collect(k)
+      out.collect(s"key: $k")
     //}
   }
 

@@ -21,8 +21,7 @@ val flinkDependencies = Seq(
 
 "org.apache.flink" %% "flink-statebackend-rocksdb" % "1.9.1" % "provided",
   "org.apache.flink" % "flink-state-backends" % "1.9.1" % "provided",
-"com.typesafe.play" %% "play-json" % "2.7.2",
- "org.mongodb" % "bson" % "3.11.0-beta3"
+"com.typesafe.play" %% "play-json" % "2.7.2"
 
 )
 libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.25" % "provided"
@@ -33,6 +32,9 @@ libraryDependencies += "org.mongodb" % "bson" % "3.11.0-beta3"
 libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "2.6.0"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.2"
+// https://mvnrepository.com/artifact/org.apache.flink/flink-hadoop-compatibility
+libraryDependencies += "org.apache.flink" %% "flink-hadoop-compatibility" % "1.9.1"
+
 
 lazy val root = (project in file(".")).
   settings(
@@ -47,7 +49,7 @@ assemblyMergeStrategy in assembly := {
     oldStrategy(x)
 }
 
-assembly / mainClass := Some("it.datasoil.Job")
+assembly / mainClass := Some("it.datasoil.InspectorJob")
 
 // make run command include the provided dependencies
 Compile / run  := Defaults.runTask(Compile / fullClasspath,
