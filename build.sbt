@@ -29,10 +29,9 @@ libraryDependencies += "org.apache.flink" % "flink-s3-fs-presto" % "1.9.1"
 libraryDependencies += "com.tdunning" % "t-digest" % "3.2"
 libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.9.8"
 libraryDependencies += "org.mongodb" % "bson" % "3.11.0-beta3"
-libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "2.6.0"
+libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "2.7.0"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.2"
-// https://mvnrepository.com/artifact/org.apache.flink/flink-hadoop-compatibility
 libraryDependencies += "org.apache.flink" %% "flink-hadoop-compatibility" % "1.9.1"
 
 
